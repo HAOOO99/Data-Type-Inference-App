@@ -1,0 +1,7 @@
+Name,Birthdate,Score,Grade,Graduate
+Alice,1/01/1990,90,A,TRUE
+Bob,2/02/1991,75,B,TRUE
+Charlie,03/03/1992,85,A,FALSE
+David,04/04/1993,70,B,TRUE
+Eve,04/04/1993,Not Availabl,A,TRUE
+Tom,04/04/1993,100,C,FALSE
