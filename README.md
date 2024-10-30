@@ -15,4 +15,6 @@ Run `python manage.py run server ` to start Django Engine
 
 Run `npm start` to start the react engine (Frontend web page)
 
+## Note
+To deal with the xlsx files with multiple sheets, it will only process the first sheet of the file. Please ensure the first sheet is the correct excel 'table's format 
 

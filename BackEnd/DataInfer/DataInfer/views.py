@@ -22,12 +22,15 @@ def file_upload(request):
         if form.is_valid():
             # Process the uploaded file, e.g., save it
             result = handle_uploaded_file(request.FILES['file'])
+            
             # Extract schema as a dictionary
             schema = {column: str(dtype) for column, dtype in result.dtypes.iteritems()}
 
             # Convert schema dictionary to JSON string
-            schema_json = json.dumps(schema)
-            return JsonResponse(schema_json, status=200,safe=False)
+            # schema_json = json.dumps(schema)
+            # print(schema_json)
+            message = map_dtypes_to_friendly_names(result)
+            return JsonResponse(json.dumps(message), status=200,safe=False)
         else:
             return JsonResponse({'error': 'Form is not valid'}, status=400)
     else:
@@ -181,3 +184,25 @@ def infer_and_convert_data_types(df):
         
 
     return df
+
+
+def map_dtypes_to_friendly_names(df):
+    # Define a dictionary that maps pandas dtypes to user-friendly names
+    dtype_mapping = {
+        'object': 'Text',
+        'int64': 'Integer',
+        'int32': 'Integer',
+        'int16': 'Integer',
+        'int8': 'Integer',
+        'float64': 'Float',
+        'float32': 'Float',
+        'bool': 'Boolean',
+        'datetime64[ns]': 'Date/Time',
+        'timedelta[ns]': 'Date/Time',
+        'category': 'Category',
+        
+        }
+    
+    # Use the dtype mapping to replace dtype names
+    friendly_dtypes = {col: dtype_mapping[str(df[col].dtype)] for col in df.columns}
+    return friendly_dtypes
