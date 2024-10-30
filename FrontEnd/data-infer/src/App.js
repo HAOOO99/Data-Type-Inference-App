@@ -2,10 +2,15 @@ import Button from 'react-bootstrap/Button';
 import Stack from 'react-bootstrap/Stack';
 import Container from 'react-bootstrap/Container';
 import React from 'react';
+import { useState } from 'react';
+import DisplayTable from './DisplayTable';
 
-// import './App.css';
+import './App.css';
 
 function App() {
+
+  const [result,setResult] = useState("");
+  const [flag, setFlag] = useState(false);
 
   // Create a reference to the hidden file input element
   const hiddenFileInput = React.useRef(null);
@@ -13,6 +18,7 @@ function App() {
   // Handler to simulate file input click when button is clicked
   const handleClick = () => {
     hiddenFileInput.current.click();
+    // console.log(hiddenFileInput)
   };
   // Handler for file selection
   const handleChange = async (event) => {
@@ -32,19 +38,22 @@ function App() {
                   method: 'POST',
                   body: formData,
               });
-              const result = await response.json();
-              console.log(result);
+              const res = await response.json();
+              setResult(JSON.parse(res));
+              setFlag(true);
+              // flag = true;
+              console.log(JSON.parse(res));
               alert('File uploaded successfully!');
           } catch (error) {
               console.error('Error uploading file:', error);
               alert('Failed to upload file.');
           }
-          // Process your file here (e.g., read file, upload to server)
       } else {
           alert('Please upload a CSV or Excel file.');
       }
   }
     // console.log(postfix); // Do something with the uploaded file
+    // console.log(result)
 };
   return (
     <div className="App">
@@ -53,14 +62,19 @@ function App() {
         {/* <Stack gap={2}> */}
 
           <Button variant="info"onClick={handleClick}>Import Excel/CSV file</Button>{' '}
-        {/* </Stack> */}
-        <input
+
+          <input
                 type="file"
                 ref={hiddenFileInput}
                 onChange={handleChange}
                 accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" // Filters to only allow CSV and Excel files
                 style={{ display: 'none' }} // Hide the file input
             />
+            <hr></hr>
+            {/* {result && <div>Upload Result: {JSON.stringify(result)}</div>} */}
+            { flag && <DisplayTable data={result} />}
+        {/* </Stack> */}
+        
 
       </Container>
       

@@ -6,6 +6,17 @@
   align-items: center;
 }
 
+.container {
+  display: flex;           /* Establishes a flex container */
+  flex-direction: column;  /* Stacks children vertically */
+  justify-content: center; /* Centers items along the main axis */
+  align-items: center;     /* Centers items along the cross axis */
+  height: 100vh;           /* Full viewport height */
+}
+
+.item {
+  margin: 10px; /* Just for some spacing between items */
+}
 
 
 
