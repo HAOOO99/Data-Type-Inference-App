@@ -13,8 +13,6 @@ import json
 import numpy as np
 import re
 
-# Create your views here.
-
 @csrf_exempt
 def file_upload(request):
     if request.method == 'POST':
@@ -38,6 +36,7 @@ def file_upload(request):
 
 def handle_uploaded_file(f):
     file_path = os.path.join(settings.MEDIA_ROOT, f.name)
+    # chunks = []
     
     with open(file_path, 'wb+') as destination:
         for chunk in f.chunks():
@@ -46,25 +45,23 @@ def handle_uploaded_file(f):
     if  not file_path.endswith('.csv'):
         print("Excl file upload "+file_path)
         try:
-
-            df = pd.read_excel(file_path, engine='xlrd')
+            df = pd.read_excel(file_path,engine='xlrd', nrows=10000)
             df = infer_and_convert_data_types(df)
             print(df.head())
             return df
 
         except :
-            df = pd.read_excel(file_path,engine='openpyxl')
+            df = pd.read_excel(file_path,engine='openpyxl',nrows=10000)
             df = infer_and_convert_data_types(df)
             print(df)
             return df
 
      # After saving the file, read it back
     else: 
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, nrows=10000)
         df = infer_and_convert_data_types(df)
         print(df)
         return df
-    
 
 
 def looks_like_date(num):
@@ -98,11 +95,17 @@ def check(num):
     return False
 
 def infer_and_convert_data_types(df):
+    # Check if the DataFrame has enough rows
+    if len(df) > 10000:
+        # Randomly sample 10000 rows from the DataFrame
+        df = df.sample(n=10000, random_state=42)  # random_state for reproducibility
+    else:
+        print("The file has less than 10,000 rows.")
+
     for col in df.columns:
 
         # Attempt to convert to numeric first
         df_converted = pd.to_numeric(df[col], errors='coerce')
-        # print(df_converted)
         if not df_converted.isna().all():  # If at least one value is numeric            
             col_type = df[col].dtype
             c_min = df_converted.min()
@@ -110,7 +113,6 @@ def infer_and_convert_data_types(df):
             if str(col_type)[:3] == "int": # if all values are int-based [1,2,3,4] -> int type
                 # check the precision for different int type
                 if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                    
                     df[col] = df[col].astype("int8", errors='ignore')
                 elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
                     df[col] = df[col].astype("int16",errors='ignore')
@@ -155,7 +157,6 @@ def infer_and_convert_data_types(df):
                 else:
                     try:
                         if df[col].apply(reform).apply(check).any():
-                            
                             df[col] = df[col].apply(reform)
                             # df[col] = pd.to_datetime(df[col].apply(reform))
                             
@@ -181,8 +182,6 @@ def infer_and_convert_data_types(df):
             elif len(df[col].unique()) / len(df[col]) < 0.8:  # Example threshold for categorization
                 df[col] = pd.Categorical(df[col])
         
-        
-
     return df
 
 

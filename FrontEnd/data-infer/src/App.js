@@ -15,6 +15,10 @@ function App() {
   // Create a reference to the hidden file input element
   const hiddenFileInput = React.useRef(null);
 
+  const submitData = () => {
+
+  }
+
   // Handler to simulate file input click when button is clicked
   const handleClick = () => {
     hiddenFileInput.current.click();
@@ -73,6 +77,7 @@ function App() {
             <hr></hr>
             {/* {result && <div>Upload Result: {JSON.stringify(result)}</div>} */}
             { flag && <DisplayTable data={result} />}
+            {flag && <Button variant="info" onClick={submitData}>Submit</Button>}
         {/* </Stack> */}
         
 

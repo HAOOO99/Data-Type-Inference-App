@@ -4,7 +4,7 @@ function DisplayTable({ data }) {
     const keys = Object.keys(data);
     const values = Object.values(data);
     return (
-      <table  className="table w-75">
+      <table id="editableTable"  className="table w-75">
             <thead>
                 <tr>
                     <th>Column </th>
@@ -14,8 +14,8 @@ function DisplayTable({ data }) {
             <tbody>
                 {keys.map((key, index) => (
                     <tr key={index}>
-                        <td>{key}</td>
-                        <td>{String(values[index])}</td>
+                        <td className="fst-italic">{key}</td>
+                        <td contentEditable='true'>{String(values[index])}</td>
                     </tr>
                 ))}
             </tbody>
