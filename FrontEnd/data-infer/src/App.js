@@ -1,8 +1,7 @@
 import Button from 'react-bootstrap/Button';
-import Stack from 'react-bootstrap/Stack';
 import Container from 'react-bootstrap/Container';
 import React from 'react';
-import { useState } from 'react';
+import { useState ,useRef} from 'react';
 import DisplayTable from './DisplayTable';
 
 import './App.css';
@@ -11,14 +10,53 @@ function App() {
 
   const [result,setResult] = useState("");
   const [flag, setFlag] = useState(false);
+  const [type,setType] = useState("");
+  const [prevType,setPrevType] = useState("");
+  
+
+  const handleDataChange = updatedData => {
+    setResult(updatedData);  // Set the result state
+    setType(Object.values(updatedData));  // Perform additional actions
+  };
 
   // Create a reference to the hidden file input element
-  const hiddenFileInput = React.useRef(null);
+  const hiddenFileInput = useRef(null);
+  
+  // handler for the data type override
+  const submitData = async (result,type) => {
+      // setType(Object.values(result))
 
-  const submitData = () => {
+      console.log(prevType);
+      console.log(type)
+      console.log(result)
+      
+      const data = {
+        'result':result,
+        'keys':prevType,
+        'newValues':type
+      }
 
-  }
-
+      const url = 'http://localhost:8000/api/submit/';  // Update with your actual backend API URL
+      const options = {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+      };
+      
+      try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          setResult(data);
+          console.log('Submission successful:', data);
+          alert('Data submitted successfully!');
+      } catch (error) {
+          console.error('Submission failed:', error);
+          alert('Failed to submit data.');
+      }
+  };
+  
   // Handler to simulate file input click when button is clicked
   const handleClick = () => {
     hiddenFileInput.current.click();
@@ -43,10 +81,12 @@ function App() {
                   body: formData,
               });
               const res = await response.json();
-              setResult(JSON.parse(res));
+              console.log(res);
+              setResult(JSON.parse(res.message));
+              setType(Object.values(JSON.parse(res.message)));
+              setPrevType(res.origin)
               setFlag(true);
-              // flag = true;
-              console.log(JSON.parse(res));
+              
               alert('File uploaded successfully!');
           } catch (error) {
               console.error('Error uploading file:', error);
@@ -56,8 +96,7 @@ function App() {
           alert('Please upload a CSV or Excel file.');
       }
   }
-    // console.log(postfix); // Do something with the uploaded file
-    // console.log(result)
+  
 };
   return (
     <div className="App">
@@ -75,9 +114,9 @@ function App() {
                 style={{ display: 'none' }} // Hide the file input
             />
             <hr></hr>
-            {/* {result && <div>Upload Result: {JSON.stringify(result)}</div>} */}
-            { flag && <DisplayTable data={result} />}
-            {flag && <Button variant="info" onClick={submitData}>Submit</Button>}
+
+            {flag && <DisplayTable data={result} onDataChange={handleDataChange} /> }
+            {flag && <Button variant="info" onClick={()=>submitData(result,type)}>Submit</Button>}
         {/* </Stack> */}
         
 

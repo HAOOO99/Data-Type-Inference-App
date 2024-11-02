@@ -7,7 +7,7 @@
 
 ### Move direction to `BackEnd/DataInfer` folder
 
-Run `python manage.py run server ` to start Django Engine
+Run `python manage.py runserver ` to start Django Engine
 
 ## FrontEnd 
 

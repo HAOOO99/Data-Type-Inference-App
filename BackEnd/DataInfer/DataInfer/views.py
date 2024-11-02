@@ -2,7 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import UploadFileForm
+
+from .form import UploadFileForm
 import os
 from django.conf import settings
 import csv
@@ -12,6 +13,52 @@ import pandas as pd
 import json
 import numpy as np
 import re
+
+dtype_mapping = {
+        'object': 'Text',
+        'int64': 'Integer',
+        'int32': 'Integer',
+        'int16': 'Integer',
+        'int8': 'Integer',
+        'float64': 'Float',
+        'float32': 'Float',
+        'bool': 'Boolean',
+        'datetime64[ns]': 'DateTime',
+        'timedelta[ns]': 'DateTime',
+        'category': 'Category',    
+        }
+
+
+
+def reverseMap(map):
+    reversed_map = {}
+    for key, value in map.items():
+        if value not in reversed_map:
+            reversed_map[value] = []
+        reversed_map[value].append(key)
+    return reversed_map
+
+
+@csrf_exempt
+def submit_data(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)  # Manually parse JSON data
+        print(data['keys'])
+        print(data['newValues'])
+        # new_values = list(data.values())
+        # print("new data form is ", new_values)
+        # # keys = request.session['keys_from_values']
+        # print(request.session)
+        # print("keys_from_values ", request.session.get('keys_from_values', []))
+        for group, value in zip(data['keys'], data['newValues']):
+            for key in group:
+                if key in dtype_mapping:
+                    dtype_mapping[key] = value
+        
+        print(dtype_mapping)
+        return JsonResponse(data['result'])
+    else:
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=400)
 
 @csrf_exempt
 def file_upload(request):
@@ -24,11 +71,19 @@ def file_upload(request):
             # Extract schema as a dictionary
             schema = {column: str(dtype) for column, dtype in result.dtypes.iteritems()}
 
-            # Convert schema dictionary to JSON string
-            # schema_json = json.dumps(schema)
-            # print(schema_json)
             message = map_dtypes_to_friendly_names(result)
-            return JsonResponse(json.dumps(message), status=200,safe=False)
+            current_value=list(message.values())
+            reversed_dtype_mapping = reverseMap(dtype_mapping)
+            keys_from_values = [reversed_dtype_mapping.get(value, []) for value in current_value]
+            
+            print(message)
+            data = {
+                'message':json.dumps(message),
+                'origin': keys_from_values,
+
+            }
+
+            return JsonResponse(data, status=200,safe=False)
         else:
             return JsonResponse({'error': 'Form is not valid'}, status=400)
     else:
@@ -36,7 +91,6 @@ def file_upload(request):
 
 def handle_uploaded_file(f):
     file_path = os.path.join(settings.MEDIA_ROOT, f.name)
-    # chunks = []
     
     with open(file_path, 'wb+') as destination:
         for chunk in f.chunks():
@@ -47,20 +101,20 @@ def handle_uploaded_file(f):
         try:
             df = pd.read_excel(file_path,engine='xlrd', nrows=10000)
             df = infer_and_convert_data_types(df)
-            print(df.head())
+            # print(df.head())
             return df
 
         except :
             df = pd.read_excel(file_path,engine='openpyxl',nrows=10000)
             df = infer_and_convert_data_types(df)
-            print(df)
+            # print(df)
             return df
 
      # After saving the file, read it back
     else: 
         df = pd.read_csv(file_path, nrows=10000)
         df = infer_and_convert_data_types(df)
-        print(df)
+        # print(df)
         return df
 
 
@@ -187,20 +241,7 @@ def infer_and_convert_data_types(df):
 
 def map_dtypes_to_friendly_names(df):
     # Define a dictionary that maps pandas dtypes to user-friendly names
-    dtype_mapping = {
-        'object': 'Text',
-        'int64': 'Integer',
-        'int32': 'Integer',
-        'int16': 'Integer',
-        'int8': 'Integer',
-        'float64': 'Float',
-        'float32': 'Float',
-        'bool': 'Boolean',
-        'datetime64[ns]': 'Date/Time',
-        'timedelta[ns]': 'Date/Time',
-        'category': 'Category',
-        
-        }
+
     
     # Use the dtype mapping to replace dtype names
     friendly_dtypes = {col: dtype_mapping[str(df[col].dtype)] for col in df.columns}
