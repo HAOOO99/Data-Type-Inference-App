@@ -1,13 +1,11 @@
 # Data-Type-Inference-App
 
 ## Backend
-### First need start the vitual environment
+### First need install the necessary library
 
 Move to `Backend` directory
 
-Run `python -m venv myvenv` to create a new virtual environment
 Run `pip install django pandas numpy django-cors-headers`
-Run `source myenv/bin.activate` to start the virtual environment
 
 ### Move direction to `BackEnd/DataInfer` folder
 
