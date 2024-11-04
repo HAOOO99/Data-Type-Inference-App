@@ -3,8 +3,6 @@
 ## Backend
 ### First need install the necessary library
 
-Move to `Backend` directory
-
 Run `pip install django pandas numpy django-cors-headers`
 
 ### Move direction to `BackEnd/DataInfer` folder
