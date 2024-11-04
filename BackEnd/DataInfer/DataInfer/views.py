@@ -7,13 +7,13 @@ from .form import UploadFileForm
 import os
 from django.conf import settings
 import csv
-import chardet
 
 import pandas as pd
 import json
 import numpy as np
 import re
 
+# User Friendly type transfer
 dtype_mapping = {
         'object': 'Text',
         'int64': 'Integer',
@@ -29,7 +29,6 @@ dtype_mapping = {
         }
 
 
-
 def reverseMap(map):
     reversed_map = {}
     for key, value in map.items():
@@ -43,13 +42,6 @@ def reverseMap(map):
 def submit_data(request):
     if request.method == 'POST':
         data = json.loads(request.body)  # Manually parse JSON data
-        print(data['keys'])
-        print(data['newValues'])
-        # new_values = list(data.values())
-        # print("new data form is ", new_values)
-        # # keys = request.session['keys_from_values']
-        # print(request.session)
-        # print("keys_from_values ", request.session.get('keys_from_values', []))
         for group, value in zip(data['keys'], data['newValues']):
             for key in group:
                 if key in dtype_mapping:
@@ -101,38 +93,34 @@ def handle_uploaded_file(f):
         try:
             df = pd.read_excel(file_path,engine='xlrd', nrows=10000)
             df = infer_and_convert_data_types(df)
-            # print(df.head())
             return df
 
         except :
             df = pd.read_excel(file_path,engine='openpyxl',nrows=10000)
             df = infer_and_convert_data_types(df)
-            # print(df)
             return df
 
      # After saving the file, read it back
     else: 
         df = pd.read_csv(file_path, nrows=10000)
         df = infer_and_convert_data_types(df)
-        # print(df)
         return df
 
-
+# Check whether a Integer like 20201918 looks like a date type
 def looks_like_date(num):
     str_num = str(num)
     
-    if len(str_num) >= 10: 
+    if len(str_num) >= 8: 
         year, month, day = float(str_num[:4]), float(str_num[4:6]), float(str_num[6:])
 
         if 1800 <= year <= 2024 and 1 <= month <= 12 and 1 <= day <= 31:
             return True
    
     return False
-
+# Reform the date data to a standard form aplit by '-'
 def reform(num):
     str_num = str(num)
     try:
-        # new = str_num.split(",")
         new = re.split(r'[, .]+', str_num)
     
         result = '-'.join(str(number) for number in new)
@@ -149,7 +137,7 @@ def check(num):
     return False
 
 def infer_and_convert_data_types(df):
-    # Check if the DataFrame has enough rows
+    # Check if the DataFrame has enough rows 
     if len(df) > 10000:
         # Randomly sample 10000 rows from the DataFrame
         df = df.sample(n=10000, random_state=42)  # random_state for reproducibility
@@ -162,18 +150,23 @@ def infer_and_convert_data_types(df):
         df_converted = pd.to_numeric(df[col], errors='coerce')
         if not df_converted.isna().all():  # If at least one value is numeric            
             col_type = df[col].dtype
+            # print(df[col])
             c_min = df_converted.min()
             c_max = df_converted.max()
             if str(col_type)[:3] == "int": # if all values are int-based [1,2,3,4] -> int type
-                # check the precision for different int type
-                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                    df[col] = df[col].astype("int8", errors='ignore')
-                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
-                    df[col] = df[col].astype("int16",errors='ignore')
-                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
-                    df[col] = df[col].astype("int32",errors='ignore')
-                elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
-                    df[col] = df[col].astype("int64",errors='ignore')
+                if(not df[col].apply(looks_like_date).any()):
+                    print(df[col],df[col].apply(looks_like_date).any())
+                    # check the precision for different int type
+                    if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                        df[col] = df[col].astype("int8", errors='ignore')
+                    elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                        df[col] = df[col].astype("int16",errors='ignore')
+                    elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                        df[col] = df[col].astype("int32",errors='ignore')
+                    elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
+                        df[col] = df[col].astype("int64",errors='ignore')
+                else:
+                    df[col] = pd.to_datetime(df[col])
             # [1.3, 2.4, 4.5] -> float
             # [1, 2.4, 4] -> float
             # elif str(col_type)[:3] == "flo": # if one of values is float-based 
@@ -187,7 +180,6 @@ def infer_and_convert_data_types(df):
                 # [1, 2, 3, Not available] -> int
                 # [1.3, 4, 5, Not avalible] -> float
                 df[col] = df_converted
-                
                 if(not df[col].apply(looks_like_date).any()):
                     
                     if df[col].isna().any():
@@ -198,33 +190,27 @@ def infer_and_convert_data_types(df):
                             # Convert to integer 
                             df[col] = df[col].astype('int')
                         else: 
+                            # Convert to Float
                             df[col] = df[col].astype('float')
         
         # Attempt to convert to datetime
         if str(df[col].dtype)[:5] == 'float':
             try:
-                # print(df[col].apply(looks_like_date))
                 if(df[col].apply(looks_like_date).any()):
                     df[col] = pd.to_datetime(df[col])
-                    # print(df[col])
                     continue
                 else:
                     try:
                         if df[col].apply(reform).apply(check).any():
-                            df[col] = df[col].apply(reform)
-                            # df[col] = pd.to_datetime(df[col].apply(reform))
-                            
+                            df[col] = df[col].apply(reform)                             
                     except:
                         pass
             except (ValueError, TypeError):
                 pass
-        # print(df[col])
-
+        # Deal with the final rest type
         if(df[col].dtype == object):
             try:
-                # print(df[col].apply(looks_like_date))
                 df[col] = pd.to_datetime(df[col].apply(reform))
-                # print(df[col])
                 continue
             except (ValueError, TypeError):
                 pass
@@ -242,7 +228,6 @@ def infer_and_convert_data_types(df):
 def map_dtypes_to_friendly_names(df):
     # Define a dictionary that maps pandas dtypes to user-friendly names
 
-    
     # Use the dtype mapping to replace dtype names
     friendly_dtypes = {col: dtype_mapping[str(df[col].dtype)] for col in df.columns}
     return friendly_dtypes

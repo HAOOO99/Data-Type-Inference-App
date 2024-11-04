@@ -1,18 +1,22 @@
 # Data-Type-Inference-App
 
 ## Backend
-### First need install all related library using 
+### First need start the vitual environment
 
-`pip install xxx`
+Move to `Backend` directory
+
+Run `source myenv/bin.activate` to start the virtual environment
 
 ### Move direction to `BackEnd/DataInfer` folder
 
 Run `python manage.py runserver ` to start Django Engine
+Ensure the port is `8000`
 
 ## FrontEnd 
 
 ### Move direction to `FrontEnd/data-infer` folder
 
+Run `npm install` first
 Run `npm start` to start the react engine (Frontend web page)
 
 ## Note
